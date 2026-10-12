@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: castle_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://admin:password123@db:5432/castle_db
+      - SECRET_KEY=supersecretjwtkey
+      - ADMIN_PASSKEY=admin123
+      - SMTP_EMAIL=democastle530@gmail.com
+      - SMTP_PASSWORD=swva imcc qqsa bhkr
+      - GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - app-network
+    depends_on:
+      - backend
+  mailer:
+    build:
+      context: ./mailer
+    environment:
+      - SMTP_EMAIL=democastle530@gmail.com
+      - SMTP_PASSWORD=swva imcc qqsa bhkr
+      - MAILER_PORT=3000
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
